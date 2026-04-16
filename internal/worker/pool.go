@@ -15,7 +15,7 @@ func NewPool(q queue.Queue, r *Registry) *Pool {
 	return &Pool{queue: q, registry: r}
 }
 
-func (p *Pool) start(n int) {
+func (p *Pool) Start(n int) {
 	for i := 0; i < n; i++ {
 		workerId := i
 		go p.run(workerId)

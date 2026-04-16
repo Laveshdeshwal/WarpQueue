@@ -4,6 +4,8 @@ go 1.25.0
 
 require (
 	github.com/gin-gonic/gin v1.12.0
+	github.com/pkg/errors v0.9.1
+	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/viper v1.21.0
 )
 
