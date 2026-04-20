@@ -5,15 +5,15 @@ type Job struct {
 	Type     string
 	Payload  []byte
 	Priority int
-	Status   Status
+	Status   JobStatus
 	Attempts int
 }
 
-type Status string
+type JobStatus string
 
 const (
-	StatusPending   Status = "pending"
-	StatusRunning   Status = "running"
-	StatusCompleted Status = "completed"
-	StatusFailed    Status = "failed"
+	StatusPending   JobStatus = "pending"
+	StatusRunning   JobStatus = "running"
+	StatusCompleted JobStatus = "completed"
+	StatusFailed    JobStatus = "failed"
 )

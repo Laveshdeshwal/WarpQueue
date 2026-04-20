@@ -1,6 +1,7 @@
 package handler
 
 import (
+	job2 "WarpQueue/internal/job"
 	"WarpQueue/internal/queue"
 	"log"
 	"time"
@@ -25,6 +26,7 @@ func (p *Pool) Start(n int) {
 func (p *Pool) run(id int) {
 	for {
 		job, err := p.queue.Dequeue()
+		p.queue.UpdateStatus(job.ID, job2.StatusRunning)
 		if err != nil {
 			time.Sleep(200 * time.Millisecond)
 
@@ -40,7 +42,9 @@ func (p *Pool) run(id int) {
 
 		if err := handler(job); err != nil {
 			log.Printf("worker-%d job %s failed: %v", id, job.ID, err)
+			p.queue.UpdateStatus(job.ID, job2.StatusFailed)
 		} else {
+			p.queue.UpdateStatus(job.ID, job2.StatusCompleted)
 			log.Printf("worker-%d job %s completed", id, job.ID)
 		}
 	}
