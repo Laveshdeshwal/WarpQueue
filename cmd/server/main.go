@@ -2,42 +2,57 @@ package main
 
 import (
 	"WarpQueue/internal/api"
+	"WarpQueue/internal/config"
 	"WarpQueue/internal/logger"
 	"WarpQueue/internal/queue"
+	"context"
+	"fmt"
 	"log"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
-	// Load Environment Variables
-	envPath := ".env"
+	cfg := config.Load()
+	logger.InitLogger("app-log", cfg.LogLevel)
 
-	viper.SetConfigFile(envPath)
-	viper.ReadInConfig()
-	viper.AutomaticEnv()
-
-	app := gin.Default()
-
-	app.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"Server": "go-warp-queue-server",
-			"Status": "running",
-		})
-	})
-
-	q := queue.NewMemoryQueue()
-	server := api.NewServer(q)
-	logger.InitLogger("app-log")
-
-	logger.Info("Server running on :8080")
-
-	err := http.ListenAndServe(":"+viper.GetString("SERVER_PORT"), server.Routes())
+	q, err := newQueue(cfg.QueueType)
 	if err != nil {
 		log.Fatal(err)
 	}
+	server := api.NewServer(q, cfg.WorkerCount)
+	httpServer := &http.Server{
+		Addr:    ":" + cfg.ServerPort,
+		Handler: server.Routes(),
+	}
 
-	//app.Run(":8080")
+	logger.Info("Server running on :" + cfg.ServerPort)
+
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	<-sigCh
+
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+	defer cancel()
+
+	if err := httpServer.Shutdown(ctx); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func newQueue(queueType string) (queue.Queue, error) {
+	switch queueType {
+	case "memory":
+		return queue.NewMemoryQueue(), nil
+	default:
+		return nil, fmt.Errorf("unsupported queue type: %s", queueType)
+	}
 }

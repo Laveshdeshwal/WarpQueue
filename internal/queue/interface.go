@@ -9,8 +9,11 @@ type Queue interface {
 	Enqueue(job job.Job) error
 	Dequeue() (job.Job, error)
 	Size() int
-	UpdateStatus(id string, status job.JobStatus) error
-	GetJob(id string) (job.Job, error)
+	Save(job job.Job) error
+	Get(id string) (job.Job, error)
+	Update(job job.Job) error
+	ListByStatus(status job.JobStatus) []job.Job
+	Stats() job.Stats
 }
 
 var ErrQueueEmpty = errors.New("queue is empty")

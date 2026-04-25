@@ -2,19 +2,19 @@ package logger
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 var Logger = logrus.New()
 var GlobalFields = map[string]interface{}{}
 
 // this is the entry point for the logger as it initializes the logger
-func InitLogger(logType string) {
+func InitLogger(logType string, level string) {
 
 	// Set logger format
 	Logger.SetFormatter(&logrus.TextFormatter{
@@ -24,7 +24,7 @@ func InitLogger(logType string) {
 		ForceQuote:      true,
 	})
 
-	setLoggerLevel(viper.GetString("LOG_LEVEL"))
+	setLoggerLevel(level)
 	GlobalFields = map[string]interface{}{
 		"log_type": logType,
 	}
@@ -82,5 +82,5 @@ func Panic(err error, msg string) {
 
 func CreateLogMsg(message ...string) string {
 	otrMessage := strings.Join(message, " | ")
-	return fmt.Sprintf("%s | %s", strings.ToUpper(viper.GetString("APP_ENV")), otrMessage)
+	return fmt.Sprintf("%s | %s", strings.ToUpper(os.Getenv("APP_ENV")), otrMessage)
 }

@@ -1,13 +1,25 @@
-package worker
+package main
 
 import (
+	"WarpQueue/internal/config"
+	"WarpQueue/internal/logger"
 	"WarpQueue/internal/queue"
 	handler "WarpQueue/internal/worker"
+	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
-	q := queue.NewMemoryQueue()
+	cfg := config.Load()
+	logger.InitLogger("worker-log", cfg.LogLevel)
+
+	q, err := newQueue(cfg.QueueType)
+	if err != nil {
+		log.Fatal(err)
+	}
 	r := handler.NewRegistry()
 
 	// Example handler
@@ -17,8 +29,22 @@ func main() {
 	})
 
 	pool := handler.NewPool(q, r)
-	pool.Start(3)
+	pool.Start(cfg.WorkerCount)
 
-	log.Println("worker pool started with 3 workers")
-	select {}
+	log.Printf("worker pool started with %d workers", cfg.WorkerCount)
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	<-sigCh
+
+	log.Printf("worker shutting down with timeout %s", cfg.ShutdownTimeout)
+}
+
+func newQueue(queueType string) (queue.Queue, error) {
+	switch queueType {
+	case "memory":
+		return queue.NewMemoryQueue(), nil
+	default:
+		return nil, fmt.Errorf("unsupported queue type: %s", queueType)
+	}
 }
