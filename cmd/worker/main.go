@@ -5,7 +5,6 @@ import (
 	"WarpQueue/internal/logger"
 	"WarpQueue/internal/queue"
 	handler "WarpQueue/internal/worker"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -16,7 +15,7 @@ func main() {
 	cfg := config.Load()
 	logger.InitLogger("worker-log", cfg.LogLevel)
 
-	q, err := newQueue(cfg.QueueType)
+	q, err := queue.NewFromConfig(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,13 +37,4 @@ func main() {
 	<-sigCh
 
 	log.Printf("worker shutting down with timeout %s", cfg.ShutdownTimeout)
-}
-
-func newQueue(queueType string) (queue.Queue, error) {
-	switch queueType {
-	case "memory":
-		return queue.NewMemoryQueue(), nil
-	default:
-		return nil, fmt.Errorf("unsupported queue type: %s", queueType)
-	}
 }
