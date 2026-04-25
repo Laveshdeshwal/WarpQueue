@@ -6,7 +6,6 @@ import (
 	"WarpQueue/internal/logger"
 	"WarpQueue/internal/queue"
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -18,7 +17,7 @@ func main() {
 	cfg := config.Load()
 	logger.InitLogger("app-log", cfg.LogLevel)
 
-	q, err := newQueue(cfg.QueueType)
+	q, err := queue.NewFromConfig(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -45,14 +44,5 @@ func main() {
 
 	if err := httpServer.Shutdown(ctx); err != nil {
 		log.Fatal(err)
-	}
-}
-
-func newQueue(queueType string) (queue.Queue, error) {
-	switch queueType {
-	case "memory":
-		return queue.NewMemoryQueue(), nil
-	default:
-		return nil, fmt.Errorf("unsupported queue type: %s", queueType)
 	}
 }
